@@ -6,37 +6,90 @@ import sys
 from house import House
 from player import Player
 from neighborhood import Neighborhood
+from monster import Monster
+from weapon import Weapon
 
 class Game:
+    """
+    Class that is responsible for running the game.
+    In MVC design, this would be the view.
+    """
+
+    PLAYER_HEALTH = 130
+
+    PLAYER_ATTACK_DMG = -20
 
     def __init__(self, world=None, current_loc=None, player=None):
+        """
+        Constructor that initializes a game object.
+
+        Args:
+            world: An instance of a neighborhood
+            current_loc: Keeps track of the room that the player is in.
+            player: The player.
+        """
         self.clear_screen()
         self.zork_intro()
         self.print_commands()
         self._world = Neighborhood()
         self._current_loc = self.world.starting_h
         self._player = self.create_player()
+        self._world.player_h._name = self._player._name
         self.clear_screen()
         self.intro_text()
         self._current_loc.print_description()
 
     @property
     def world(self):
+        """
+        Getter method for the world instance attribute.
+
+        Returns:
+            Returns an instance of a neighborhood.
+        """
         return self._world
 
     @property
     def current_loc(self):
+        """
+        Getter method for the current location instance attribute.
+
+        Returns:
+            Returns the house that the player is in.
+        """
         return self._current_loc
 
     @current_loc.setter
     def current_loc(self, new_loc):
+        """
+        Setter method for the current location instance attribute.
+
+        Args:
+            new_loc: The house that the player has moved too.
+        """
         self._current_loc = new_loc
 
     @property
     def player(self):
+        """
+        Getter method for the player instance attribute.
+
+        Returns:
+            Returns the player object.
+        """
         return self._player
 
     def create_player(self):
+        """
+        Method that creates a player with a name to make it more personalized.
+
+        Returns:
+            A player object with a name that has been entered by the user.
+
+        Raises:
+            EOFError: If the user presses ctrl-d.
+            KeyboardInterrupt: If the user presses ctrl-c.
+        """
         name = ""
         while(len(name) == 0):
             try:
@@ -48,15 +101,21 @@ class Game:
             except KeyboardInterrupt:
                 print("\nWhy did you stop me? :(")
                 sys.exit(1)
-        return Player(name, 100, -15)
+        return Player(name, Game.PLAYER_HEALTH, Game.PLAYER_ATTACK_DMG)
 
     def clear_screen(self):
+        """
+        Method that clears the terminal screen so that gameplay looks nicer.
+        """
         if not (os.name == 'nt'):
             os.system('clear')
         else:
             os.system('cls')
 
     def zork_intro(self):
+        """
+        Method that prints out the original Zork game message.
+        """
         print(("ZORK I: The Great Underground Empire\n"
               "Copyright (c) 1981, 1982, 1983 Infocom, Inc. All rights reserved.\n"
               "ZORK is a registered trademark of Infocom, Inc.\n"
@@ -64,12 +123,18 @@ class Game:
               ))
 
     def intro_text(self):
-        print(("%s, it's your job to save the day! Your friends "
-               "and family have been exposed to bad\nbatches of "
-               "candy and have been turned into monsters!\n"
+        """
+        Method that prints out the objective of the game.
+        """
+        print(("%s, it's your job to save the day! Your neighborhood "
+               "has been exposed to bad batches\nof candy and it has turned "
+               "all of your neighbors into monsters!\n"
               ) % (self._player._name))
 
     def print_commands(self):
+        """
+        Method that prints out the list of avaiable commands the user can do.
+        """
         print(("Command:\tShortcut:\tAction:\n"
               "north\t\tn\t\tMove north\n"
               "south\t\ts\t\tMove south\n"
@@ -87,26 +152,47 @@ class Game:
               ))
 
     def check_loc(self, house):
+        """
+        Method that checks the houses location when a player wants to travel
+        in the specified direction.
+
+        Args:
+            house: The house that the player attempts to traveled to.
+        """
         if (house is None):
             print("you can't go that direction")
         else:
             self._current_loc = house
-            if len(self._player.get_inventory()) < self._current_loc.max_weapons() and \
+            if len(self._player.get_inventory()) < Weapon.MAX_WEAPONS and \
                    len(self._current_loc.get_weapon_list()) == 0:
                         self._current_loc.weapon_drop()
             self.clear_screen()
             self._current_loc.print_description()
 
     def end_text(self, condition, player):
+        """
+        Method that prints out the win/lose text of the game.
+
+        Args:
+            condition: Valid args "won" or "lost".
+            player: The player that is currently playing the game.
+        """
         if (condition == "won"):
             print(("Congratulations %s, you have defeated all of the monsters and "
                    "saved the neighborhood!") % (self._player._name, ))
         else:
             print(("%s, you have been defeated! Monsters "
                    "remaining: %i") % (self._player._name, 
-                                       self._player.monsters_remaining()))
+                                       Monster._monster_count))
 
     def process_command(self, command):
+        """
+        Method that is responsible for taking user input and carrying out 
+        game interactions.
+
+        Args:
+            command: A command that the user wants to make.
+        """
         cmd_args = command.split()
         cmd_len = len(cmd_args)
         length = cmd_len == 2
@@ -140,7 +226,14 @@ class Game:
             return True
 
         if (command == "take" or command == "t"):
-            self._player.take(self._current_loc)
+            num = self._player.take(self._current_loc)
+            if (num == 0):
+               print("No weapons available to take!")
+            elif (num == 10):
+               print("Inventory full")
+            else:
+               self.clear_screen()
+               self._current_loc.print_description()
             return True
 
         if (command == "diagnostic"):
@@ -170,6 +263,9 @@ class Game:
                 cmd_args[1].isdigit() and int(cmd_args[1]) <= 9):
             if not (self._player.drop_item(int(cmd_args[1]), self._current_loc)):
                 print("Weapon not in inventory")
+                return True
+            self.clear_screen()
+            self._current_loc.print_description()
             return True
 
         if (command == "help" or command == "?"):
@@ -187,6 +283,15 @@ class Game:
         return False
 
 if __name__ == "__main__":
+    """
+    Main method that runs the game loop.
+    The game only stops if the player has died or if the player has won the game.
+
+    Raises:
+        EOFError: If the user presses ctrl-d.
+        KeyboardInterrupt: If the user presses ctrl-c.
+    """
+
     game = Game()
    
     while(game._player.is_alive()):

@@ -198,14 +198,14 @@ class Player(Observable):
             dmg_taken += enemy.attack_dmg
             if not isinstance(enemy, Person):
                 enemy.take_damage(self._attack_dmg, weapon)
-                weapon.set_ammo(1)
-                self._update_inventory()
                 if not enemy.is_alive():
                     Observable.update_observers(enemy)
             else:
                 num_person += 1        
         if num_person == len(monster):
             return 0
+        weapon.set_ammo(1)
+        self._update_inventory()
         self.set_health(dmg_taken)
         return dmg_taken
 

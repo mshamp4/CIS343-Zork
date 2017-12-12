@@ -15,7 +15,7 @@ class House(Observer, Observable):
 
     #Game became too op and I had to reduce the number of monsters
     #that spawn in each room.
-    MONSTERS = 7
+    MONSTERS = 8
 
     def __init__(self, name, description):
         """

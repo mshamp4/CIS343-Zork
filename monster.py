@@ -117,7 +117,7 @@ class Person(Monster):
             health: Monsters health.
             attack_dmg: The amount of damage the monster attacks with.
         """
-        super().__init__(name, health, attack_dmg):
+        super().__init__(name, health, attack_dmg)
 
 
 class Zombie(Monster):
